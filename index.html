@@ -1,17 +1,549 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
-    <title>StudyPro Dashboard</title>
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script type="module" crossorigin src="index-Ci3ALCsl.js"></script>
-    <link rel="stylesheet" crossorigin href="index-ByCQSxev.css">
-  </head>
-  <body>
-    <div id="root"></div>
-  </body>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+  <title>StudyPro Dashboard</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" crossorigin href="index-ByCQSxev.css">
+  <style>
+    /* ─── Animations ────────────────────────────────────────────────── */
+    @keyframes overlayFadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes userBarSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes dashFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* ─── Auth Overlay ──────────────────────────────────────────────── */
+    #auth-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 99999;
+      background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Inter', sans-serif;
+      animation: overlayFadeIn 0.25s ease;
+    }
+
+    .auth-card {
+      background: #fff;
+      border-radius: 20px;
+      padding: 48px 40px 40px;
+      text-align: center;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.2);
+    }
+
+    .auth-logo {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+
+    .auth-title {
+      font-size: 28px;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 0 0 8px;
+    }
+
+    .auth-subtitle {
+      font-size: 14px;
+      color: #64748b;
+      margin: 0 0 32px;
+      line-height: 1.5;
+    }
+
+    .auth-card button {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: #fff;
+      border: 2px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 13px 20px;
+      font-size: 15px;
+      font-weight: 600;
+      color: #0f172a;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .auth-card button:hover:not(:disabled) {
+      background: #f8fafc;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    }
+
+    .auth-card button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .auth-error {
+      margin-top: 14px;
+      font-size: 13px;
+      color: #ef4444;
+      min-height: 18px;
+    }
+
+    /* ─── User Bar ──────────────────────────────────────────────────── */
+    #user-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 5px 12px;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid #e2e8f0;
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* Trigger button */
+    .ud-trigger {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: transparent;
+      border: 1.5px solid transparent;
+      border-radius: 10px;
+      padding: 5px 10px 5px 6px;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .ud-trigger:hover {
+      background: #f1f5f9;
+      border-color: #e2e8f0;
+    }
+
+    .ud-trigger-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #3b82f6;
+      flex-shrink: 0;
+    }
+
+    .ud-trigger-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #334155;
+    }
+
+    .ud-caret {
+      color: #94a3b8;
+      transition: transform 0.2s;
+      flex-shrink: 0;
+    }
+
+    .ud-trigger[aria-expanded="true"] .ud-caret {
+      transform: rotate(180deg);
+    }
+
+    /* Dropdown menu */
+    .ud-menu {
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 12px;
+      width: 240px;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+      padding: 6px 0;
+      opacity: 0;
+      transform: translateY(-6px) scale(0.97);
+      pointer-events: none;
+      transition: opacity 0.18s ease, transform 0.18s ease;
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      z-index: 10000;
+    }
+
+    .ud-menu.ud-open {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      pointer-events: all;
+    }
+
+    .ud-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px 10px;
+    }
+
+    .ud-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #3b82f6;
+      flex-shrink: 0;
+    }
+
+    .ud-name {
+      font-weight: 600;
+      color: #0f172a;
+      font-size: 13px;
+    }
+
+    .ud-email {
+      font-size: 11px;
+      color: #64748b;
+      margin-top: 2px;
+      word-break: break-all;
+    }
+
+    .ud-divider {
+      height: 1px;
+      background: #f1f5f9;
+      margin: 4px 0;
+    }
+
+    .ud-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 14px;
+      font-size: 12px;
+      color: #64748b;
+    }
+
+    .ud-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #22c55e;
+      flex-shrink: 0;
+      box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+    }
+
+    .ud-item {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      width: 100%;
+      background: transparent;
+      border: none;
+      padding: 9px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #334155;
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.12s;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .ud-item:hover {
+      background: #f8fafc;
+    }
+
+    .ud-item--danger {
+      color: #ef4444;
+    }
+
+    .ud-item--danger:hover {
+      background: #fef2f2;
+    }
+
+    .ud-item:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    #root {
+      padding-top: 44px;
+    }
+
+    /* ─── Dark mode ──────────────────────────────────────────────────── */
+    html.sp-dark body {
+      background: #0f172a;
+    }
+
+    html.sp-dark #user-bar {
+      background: rgba(15, 23, 42, 0.95);
+      border-bottom-color: #1e293b;
+    }
+
+    html.sp-dark .ud-trigger:hover {
+      background: #1e293b;
+      border-color: #334155;
+    }
+
+    html.sp-dark .ud-trigger-name {
+      color: #e2e8f0;
+    }
+
+    html.sp-dark .ud-caret {
+      color: #64748b;
+    }
+
+    html.sp-dark .ud-menu {
+      background: #1e293b;
+      border-color: #334155;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    html.sp-dark .ud-name {
+      color: #f1f5f9;
+    }
+
+    html.sp-dark .ud-email {
+      color: #64748b;
+    }
+
+    html.sp-dark .ud-divider {
+      background: #334155;
+    }
+
+    html.sp-dark .ud-status {
+      color: #94a3b8;
+    }
+
+    html.sp-dark .ud-item {
+      color: #cbd5e1;
+    }
+
+    html.sp-dark .ud-item:hover {
+      background: #334155;
+    }
+
+    html.sp-dark .ud-item--danger {
+      color: #f87171;
+    }
+
+    html.sp-dark .ud-item--danger:hover {
+      background: rgba(239, 68, 68, 0.1);
+    }
+
+    html.sp-dark #sp-skeleton {
+      background: #0f172a;
+    }
+
+    html.sp-dark .sk-pulse {
+      background: #1e293b;
+    }
+
+    html.sp-dark .sk-card {
+      background: #1e293b;
+    }
+
+    html.sp-dark .sk-bottomnav {
+      background: #0f172a;
+      border-top-color: #1e293b;
+    }
+
+    /* ─── Skeleton Loader ───────────────────────────────────────────── */
+    @keyframes sk-pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.4;
+      }
+    }
+
+    .sk-pulse {
+      background: #e2e8f0;
+      border-radius: 8px;
+      animation: sk-pulse 1.4s ease-in-out infinite;
+    }
+
+    #sp-skeleton {
+      position: fixed;
+      inset: 0;
+      z-index: 9998;
+      background: #f8fafc;
+      padding: 48px 16px 80px;
+      font-family: 'Inter', sans-serif;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .sk-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 4px;
+      margin-bottom: 4px;
+    }
+
+    .sk-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .sk-body {
+      flex: 1;
+      display: flex;
+      gap: 12px;
+      min-height: 0;
+    }
+
+    .sk-col-main {
+      flex: 1.5;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sk-col-side {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sk-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+    }
+
+    .sk-bottomnav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #fff;
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 10px 0 14px;
+      gap: 0;
+    }
+
+    /* ─── Toast notifications ───────────────────────────────────────── */
+    .sp-toast {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      z-index: 99999;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+      max-width: 380px;
+      animation: toast-in 0.25s ease;
+    }
+
+    @keyframes toast-in {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .sp-toast span {
+      flex: 1;
+      line-height: 1.4;
+    }
+
+    .sp-toast a {
+      color: inherit;
+      font-weight: 700;
+    }
+
+    .sp-toast button {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      line-height: 1;
+      padding: 0;
+      opacity: 0.7;
+      color: inherit;
+    }
+
+    .sp-toast--warn {
+      background: #fff7ed;
+      color: #92400e;
+      border: 1.5px solid #fbbf24;
+    }
+
+    .sp-toast--error {
+      background: #fef2f2;
+      color: #991b1b;
+      border: 1.5px solid #fca5a5;
+    }
+
+    .sp-toast--info {
+      background: #eff6ff;
+      color: #1e40af;
+      border: 1.5px solid #93c5fd;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="firebase-bootstrap.js"></script>
+</body>
+
 </html>
