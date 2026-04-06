@@ -380,6 +380,180 @@
       border-top-color: #1e293b;
     }
 
+    /* ─── Dropdown extras ───────────────────────────────────────────── */
+    .ud-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      background: #3b82f6; color: #fff; border-radius: 10px;
+      font-size: 10px; font-weight: 700; min-width: 18px; height: 18px;
+      padding: 0 5px; margin-left: auto;
+    }
+    .ud-item--admin { color: #7c3aed; }
+    .ud-item--admin:hover { background: #f5f3ff; }
+    html.sp-dark .ud-item--admin { color: #a78bfa; }
+    html.sp-dark .ud-item--admin:hover { background: rgba(124,58,237,0.15); }
+
+    /* ─── Modal Panel ────────────────────────────────────────────────── */
+    .sp-panel {
+      position: fixed; inset: 0; z-index: 99998;
+      background: rgba(0,0,0,0.45); backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px; opacity: 0; transition: opacity 0.2s ease;
+      font-family: 'Inter', sans-serif;
+    }
+    .sp-panel--open { opacity: 1; }
+    .sp-panel-card {
+      background: #fff; border-radius: 18px; width: 100%; max-width: 460px;
+      max-height: 80vh; overflow: hidden; display: flex; flex-direction: column;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.22);
+      transform: translateY(12px); transition: transform 0.22s ease;
+    }
+    .sp-panel--open .sp-panel-card { transform: translateY(0); }
+    .sp-panel-card--wide { max-width: 620px; }
+    .sp-panel-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 20px 14px; border-bottom: 1px solid #f1f5f9;
+      flex-shrink: 0;  /* header never shrinks */
+    }
+    /* Admin content wrapper — must be a scrollable flex column */
+    #sp-admin-content {
+      flex: 1; min-height: 0;
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    /* Rewards content wrapper */
+    #sp-rewards-content {
+      flex: 1; min-height: 0; overflow-y: auto;
+    }
+    .sp-panel-title { font-size: 17px; font-weight: 700; color: #0f172a; margin: 0; }
+    .sp-panel-close {
+      width: 28px; height: 28px; border-radius: 50%; border: none;
+      background: #f1f5f9; color: #64748b; font-size: 18px; font-weight: 700;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      line-height: 1;
+    }
+    .sp-panel-close:hover { background: #e2e8f0; }
+    .sp-empty {
+      text-align: center; color: #64748b; padding: 40px 20px;
+      font-size: 14px; line-height: 1.6;
+    }
+
+    /* ─── Rewards grid ───────────────────────────────────────────────── */
+    .sp-rewards-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 12px; padding: 18px; overflow-y: auto;
+    }
+    .sp-reward-card {
+      border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px 12px;
+      text-align: center; background: #f8fafc; position: relative;
+      transition: box-shadow 0.15s;
+    }
+    .sp-reward-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.09); }
+    .sp-reward-emoji { font-size: 34px; margin-bottom: 8px; }
+    .sp-reward-title { font-size: 12px; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
+    .sp-reward-desc  { font-size: 11px; color: #64748b; line-height: 1.4; }
+    .sp-reward-badge {
+      position: absolute; top: 8px; right: 8px;
+      background: #7c3aed; color: #fff; font-size: 9px; font-weight: 700;
+      border-radius: 6px; padding: 1px 5px; text-transform: uppercase;
+    }
+
+    /* ─── Admin panel ────────────────────────────────────────────────── */
+    .sp-admin-bar {
+      padding: 10px 18px 6px;
+      display: flex; align-items: center; gap: 8px;
+      flex-shrink: 0; /* always visible, never pushed out */
+    }
+    .sp-chip {
+      display: inline-block; background: #f1f5f9; color: #64748b;
+      border-radius: 20px; padding: 3px 10px; font-size: 12px; font-weight: 600;
+    }
+    .sp-user-list {
+      flex: 1; min-height: 0;        /* take all remaining space and allow shrink */
+      overflow-y: auto;              /* scroll when content overflows */
+      padding: 10px 14px 14px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .sp-user-card {
+      border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px;
+      background: #fafafa;
+    }
+    .sp-user-card-row {
+      display: flex; align-items: flex-start;
+      justify-content: space-between; gap: 12px; margin-bottom: 10px;
+    }
+    .sp-user-card-name  { font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 2px; }
+    .sp-user-card-email { font-size: 11px; color: #64748b; word-break: break-all; }
+    .sp-user-chips { display: flex; flex-wrap: wrap; gap: 5px; flex-shrink: 0; }
+    .sp-refresh-btn {
+      margin-left: auto; background: #f1f5f9; border: 1px solid #e2e8f0;
+      color: #475569; border-radius: 8px; padding: 4px 10px; font-size: 12px;
+      font-weight: 600; cursor: pointer; transition: background 0.12s;
+      font-family: 'Inter', sans-serif;
+    }
+    .sp-refresh-btn:hover { background: #e2e8f0; }
+    .sp-user-info-col { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .sp-rank { margin-right: 4px; }
+    .sp-user-medals {
+      display: flex; flex-wrap: wrap; gap: 3px; margin-top: 4px;
+    }
+    .sp-user-medals--empty { font-size: 11px; color: #cbd5e1; font-style: italic; }
+    .sp-medal-pip {
+      font-size: 16px; cursor: default; line-height: 1;
+    }
+    .sp-medal-btn {
+      width: 100%; background: #eff6ff; border: 1.5px solid #bfdbfe;
+      color: #2563eb; border-radius: 8px; padding: 7px; font-size: 12px;
+      font-weight: 600; cursor: pointer; transition: background 0.12s;
+      font-family: 'Inter', sans-serif;
+    }
+    .sp-medal-btn:hover { background: #dbeafe; }
+    .sp-medal-form {
+      display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;
+    }
+    .amd-option {
+      background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
+      padding: 5px 10px; font-size: 12px; font-weight: 500; cursor: pointer;
+      transition: background 0.12s; font-family: 'Inter', sans-serif; color: #334155;
+    }
+    .amd-option:hover { background: #f0fdf4; border-color: #86efac; color: #166534; }
+    .amd-option:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ─── Medal notification ─────────────────────────────────────────── */
+    .medal-notif {
+      position: fixed; bottom: 24px; right: 24px; z-index: 99999;
+      display: flex; align-items: center; gap: 12px;
+      background: #fff; border: 1px solid #e2e8f0;
+      border-radius: 14px; padding: 12px 16px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.14);
+      font-family: 'Inter', sans-serif;
+      transform: translateX(calc(100% + 30px)); opacity: 0;
+      transition: transform 0.35s cubic-bezier(.34,1.56,.64,1), opacity 0.3s ease;
+      max-width: 260px;
+    }
+    .medal-notif--show { transform: translateX(0); opacity: 1; }
+    .medal-notif-emoji { font-size: 32px; flex-shrink: 0; }
+    .medal-notif-top   { font-size: 11px; color: #64748b; margin-bottom: 2px; font-weight: 500; }
+    .medal-notif-name  { font-size: 14px; font-weight: 700; color: #0f172a; }
+
+    /* ─── Dark mode — panels & admin ────────────────────────────────── */
+    html.sp-dark .sp-panel-card { background: #1e293b; }
+    html.sp-dark .sp-panel-header { border-bottom-color: #334155; }
+    html.sp-dark .sp-panel-title { color: #f1f5f9; }
+    html.sp-dark .sp-panel-close { background: #334155; color: #94a3b8; }
+    html.sp-dark .sp-empty { color: #64748b; }
+    html.sp-dark .sp-reward-card { background: #0f172a; border-color: #334155; }
+    html.sp-dark .sp-reward-title { color: #f1f5f9; }
+    html.sp-dark .sp-reward-desc  { color: #64748b; }
+    html.sp-dark .sp-chip { background: #334155; color: #94a3b8; }
+    html.sp-dark .sp-user-card { background: #0f172a; border-color: #334155; }
+    html.sp-dark .sp-user-card-name  { color: #f1f5f9; }
+    html.sp-dark .sp-user-card-email { color: #64748b; }
+    html.sp-dark .sp-medal-btn { background: rgba(37,99,235,0.15); border-color: #1e40af; color: #93c5fd; }
+    html.sp-dark .sp-refresh-btn { background: #334155; border-color: #475569; color: #94a3b8; }
+    html.sp-dark .sp-user-medals--empty { color: #475569; }
+    html.sp-dark .amd-option { background: #1e293b; border-color: #334155; color: #cbd5e1; }
+    html.sp-dark .medal-notif { background: #1e293b; border-color: #334155; }
+    html.sp-dark .medal-notif-name { color: #f1f5f9; }
+
     /* ─── Skeleton Loader ───────────────────────────────────────────── */
     @keyframes sk-pulse {
 

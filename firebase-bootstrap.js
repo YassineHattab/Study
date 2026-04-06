@@ -14,6 +14,7 @@ import {
   getDoc,
   setDoc,
   collection,
+  collectionGroup,
   onSnapshot,
   deleteDoc,
   getDocs,
@@ -52,6 +53,47 @@ const state = {
   user:  null,
   cache: {},
 };
+
+// ─── Admin & Medals config ─────────────────────────────────────────────────
+const ADMIN_EMAIL = "yassihatta@gmail.com";
+
+const AUTO_MEDALS = [
+  {
+    id: "auto_first_session",
+    emoji: "⏱️", title: "Premier Focus",
+    description: "Tu as complété ta première session Pomodoro !",
+    check: () => { try { return JSON.parse(state.cache["studypro_sessions"] || "[]").length > 0; } catch { return false; } },
+  },
+  {
+    id: "auto_pomodoro_master",
+    emoji: "🔥", title: "Maître du Pomodoro",
+    description: "Tu as complété 10 sessions Pomodoro !",
+    check: () => { try { return JSON.parse(state.cache["studypro_sessions"] || "[]").length >= 10; } catch { return false; } },
+  },
+  {
+    id: "auto_first_note",
+    emoji: "📝", title: "Première Note",
+    description: "Tu as rédigé ta première note de cours !",
+    check: () => { try { return Object.keys(JSON.parse(state.cache["studypro_day_notes"] || "{}")).length > 0; } catch { return false; } },
+  },
+  {
+    id: "auto_first_task",
+    emoji: "✅", title: "Organisé",
+    description: "Tu as ajouté tes premières tâches !",
+    check: () => { try { return JSON.parse(state.cache["studypro_tasks"] || "[]").length > 0; } catch { return false; } },
+  },
+];
+
+const ADMIN_MEDALS = [
+  { id: "admin_major_promo",      emoji: "🏆", title: "Major de Promo",         description: "Le meilleur de la promotion !" },
+  { id: "admin_expert_anatomie",  emoji: "🩺", title: "Expert Anatomie",         description: "Maîtrise parfaite de l'anatomie !" },
+  { id: "admin_assiduite",        emoji: "⭐", title: "Assiduité Exemplaire",    description: "Présent et motivé chaque jour !" },
+  { id: "admin_courage",          emoji: "💪", title: "Courage",                 description: "Ne lâche jamais !" },
+  { id: "admin_meilleur_etudiant",emoji: "🎓", title: "Meilleur Étudiant",       description: "Félicitations pour tes résultats !" },
+];
+
+// Live copy of current user's medals (filled by onSnapshot)
+let _userRewards = [];
 
 // ─── Listener management (prevents stale-listener race condition) ──────────
 // Every call to _initUserData gets a unique ID. Only the most recent call
@@ -132,6 +174,317 @@ async function _deleteFromFirestore(uid, key) {
       await Promise.all(snap.docs.map((d) => deleteDoc(d.ref)));
     }
   } catch (e) { console.warn("[studypro] Firestore delete error:", key, e); }
+}
+
+// ─── User Profile ─────────────────────────────────────────────────────────
+async function _writeUserProfile(user) {
+  try {
+    await setDoc(doc(db, "userProfiles", user.uid), {
+      uid:         user.uid,
+      email:       user.email || "",
+      displayName: user.displayName || "",
+      photoURL:    user.photoURL || "",
+      lastSeen:    Date.now(),
+    }, { merge: true });
+  } catch (e) { console.warn("[studypro] Profile write error:", e); }
+}
+
+// ─── Rewards listener (real-time) ─────────────────────────────────────────
+function _listenToRewards(uid, initId) {
+  const unsub = onSnapshot(
+    collection(db, "users", uid, "rewards"),
+    (snap) => {
+      if (initId !== _currentInitId) { try { unsub(); } catch (_) {} return; }
+      const prev = _userRewards.length;
+      _userRewards = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      // Notify only when new medal arrives after initial load
+      if (_userRewards.length > prev && prev >= 0 && document.getElementById("root").style.opacity === "1") {
+        _showMedalNotification(_userRewards[_userRewards.length - 1]);
+      }
+      _refreshRewardsPanel();
+    },
+    (e) => console.warn("[studypro] Rewards listener error:", e)
+  );
+  _registerListener(uid, unsub);
+}
+
+// ─── Auto Medals ──────────────────────────────────────────────────────────
+async function _checkAutoMedals(uid) {
+  const existing = new Set(_userRewards.map(r => r.id));
+  for (const medal of AUTO_MEDALS) {
+    if (existing.has(medal.id)) continue;
+    if (medal.check()) {
+      await _awardMedal(uid, {
+        id: medal.id, emoji: medal.emoji,
+        title: medal.title, description: medal.description,
+        type: "auto", awardedAt: Date.now(),
+      });
+    }
+  }
+}
+
+async function _awardMedal(uid, medal) {
+  try {
+    await setDoc(doc(db, "users", uid, "rewards", medal.id), medal);
+    console.log("[studypro] 🏅 Medal awarded:", medal.title, "→ uid:", uid);
+  } catch (e) { console.warn("[studypro] Medal award error:", e); }
+}
+
+// ─── Medal notification toast ──────────────────────────────────────────────
+function _showMedalNotification(medal) {
+  const n = document.createElement("div");
+  n.className = "medal-notif";
+  n.innerHTML = `
+    <div class="medal-notif-emoji">${medal.emoji}</div>
+    <div class="medal-notif-body">
+      <div class="medal-notif-top">Nouvelle médaille débloquée !</div>
+      <div class="medal-notif-name">${medal.title}</div>
+    </div>
+  `;
+  document.body.appendChild(n);
+  requestAnimationFrame(() => { requestAnimationFrame(() => n.classList.add("medal-notif--show")); });
+  setTimeout(() => {
+    n.classList.remove("medal-notif--show");
+    setTimeout(() => n.remove(), 420);
+  }, 4500);
+}
+
+// ─── Rewards panel ─────────────────────────────────────────────────────────
+function _closeAllPanels() {
+  document.getElementById("sp-panel")?.remove();
+}
+
+function _showRewardsPanel() {
+  _closeAllPanels();
+  _closeDropdown();
+  const el = document.createElement("div");
+  el.id = "sp-panel";
+  el.className = "sp-panel";
+  el.innerHTML = `
+    <div class="sp-panel-card">
+      <div class="sp-panel-header">
+        <h2 class="sp-panel-title">🏅 Mes Trophées</h2>
+        <button class="sp-panel-close" id="sp-panel-close">×</button>
+      </div>
+      <div id="sp-rewards-content">${_renderRewards()}</div>
+    </div>
+  `;
+  el.addEventListener("click", (e) => { if (e.target === el) el.remove(); });
+  document.getElementById("sp-panel-close", el)?.addEventListener?.("click", () => el.remove());
+  document.body.appendChild(el);
+  requestAnimationFrame(() => el.classList.add("sp-panel--open"));
+  el.querySelector("#sp-panel-close").addEventListener("click", () => el.remove());
+}
+
+function _renderRewards() {
+  if (_userRewards.length === 0) {
+    return `<div class="sp-empty">
+      <div style="font-size:52px;margin-bottom:10px">🌟</div>
+      <div>Aucun trophée pour l'instant.</div>
+      <div style="font-size:12px;margin-top:6px;color:#94a3b8">Continue à étudier pour en gagner !</div>
+    </div>`;
+  }
+  return `<div class="sp-rewards-grid">
+    ${_userRewards.map(r => `
+      <div class="sp-reward-card">
+        <div class="sp-reward-emoji">${r.emoji}</div>
+        <div class="sp-reward-title">${r.title}</div>
+        <div class="sp-reward-desc">${r.description}</div>
+        ${r.type === "admin" ? `<div class="sp-reward-badge">Admin</div>` : ""}
+      </div>`).join("")}
+  </div>`;
+}
+
+function _refreshRewardsPanel() {
+  const c = document.getElementById("sp-rewards-content");
+  if (c) c.innerHTML = _renderRewards();
+  // Keep badge in dropdown in sync
+  const badge = document.getElementById("ud-medal-count");
+  if (badge) {
+    if (_userRewards.length > 0) {
+      badge.textContent = _userRewards.length;
+      badge.style.display = "inline-flex";
+    } else {
+      badge.style.display = "none";
+    }
+  }
+}
+
+// ─── Admin panel ───────────────────────────────────────────────────────────
+async function _showAdminPanel() {
+  _closeAllPanels();
+  _closeDropdown();
+  const el = document.createElement("div");
+  el.id = "sp-panel";
+  el.className = "sp-panel";
+  el.innerHTML = `
+    <div class="sp-panel-card sp-panel-card--wide">
+      <div class="sp-panel-header">
+        <h2 class="sp-panel-title">🎛️ Panneau de Contrôle</h2>
+        <button class="sp-panel-close" id="sp-panel-close">×</button>
+      </div>
+      <div id="sp-admin-content">
+        <div class="sp-empty"><div style="font-size:28px">⏳</div>Chargement des utilisateurs…</div>
+      </div>
+    </div>
+  `;
+  el.addEventListener("click", (e) => { if (e.target === el) el.remove(); });
+  document.body.appendChild(el);
+  el.querySelector("#sp-panel-close").addEventListener("click", () => el.remove());
+  requestAnimationFrame(() => el.classList.add("sp-panel--open"));
+  await _loadAdminUsers();
+}
+
+// ─── Time helpers ──────────────────────────────────────────────────────────
+// Detect whether session durations are stored in seconds or minutes and convert.
+// Heuristic: a single Pomodoro session is never > 4 hours (240 min).
+// If any raw value > 240, it is almost certainly in seconds.
+function _parseStudyMinutes(arr) {
+  if (!arr || arr.length === 0) return 0;
+  const pick = (x) => x.duration ?? x.focusDuration ?? x.elapsedTime ?? x.timeSpent ?? 0;
+  const maxVal = Math.max(...arr.map(pick));
+  const inSeconds = maxVal > 240; // values > 240 must be seconds
+  const total = arr.reduce((sum, x) => sum + (pick(x) || (inSeconds ? 1500 : 25)), 0);
+  return inSeconds ? Math.round(total / 60) : total;
+}
+
+function _formatStudyTime(minutes) {
+  if (!minutes || minutes <= 0) return "0 min";
+  if (minutes < 60) return `${minutes} min`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m > 0 ? `${h}h ${m}min` : `${h}h`;
+}
+
+async function _loadAdminUsers() {
+  const content = document.getElementById("sp-admin-content");
+  if (!content) return;
+  content.innerHTML = `<div class="sp-empty"><div style="font-size:28px">⏳</div>Chargement…</div>`;
+  try {
+    // ① Read all known profiles (everyone who logged in after the profile system was added)
+    const profileSnap = await getDocs(collection(db, "userProfiles"));
+    const profileMap = {}; // uid → profile object
+    profileSnap.forEach(d => { profileMap[d.id] = d.data(); });
+
+    // ② Scan the 'data' subcollection across ALL users via collectionGroup
+    //    This catches anyone who had data before userProfiles was introduced
+    try {
+      const dataSnap = await getDocs(collectionGroup(db, "data"));
+      dataSnap.forEach(d => {
+        const uid = d.ref.parent?.parent?.id;
+        if (uid && !profileMap[uid]) {
+          profileMap[uid] = { uid, email: uid, displayName: "", photoURL: "" };
+        }
+      });
+    } catch (_) { /* collectionGroup may need an index rule — non-critical */ }
+
+    const uids = Object.keys(profileMap);
+    if (uids.length === 0) {
+      content.innerHTML = `<div class="sp-empty">Aucun utilisateur enregistré.</div>`;
+      return;
+    }
+
+    // ③ Load sessions + rewards in parallel for every user
+    const usersData = await Promise.all(uids.map(async (uid) => {
+      const profile = profileMap[uid];
+      let sessions = 0, studyMinutes = 0, rewards = [];
+      try {
+        const [sessSnap, rewSnap] = await Promise.all([
+          getDoc(doc(db, "users", uid, "data", "studypro_sessions")),
+          getDocs(collection(db, "users", uid, "rewards")),
+        ]);
+        if (sessSnap.exists()) {
+          try {
+            const arr = JSON.parse(sessSnap.data().value || "[]");
+            sessions = arr.length;
+            studyMinutes = _parseStudyMinutes(arr);
+          } catch (_) {}
+        }
+        rewards = rewSnap.docs.map(d => d.data());
+      } catch (_) {}
+      return { ...profile, sessions, studyMinutes, rewards };
+    }));
+
+    // ④ Sort by study time descending (most active first)
+    usersData.sort((a, b) => (b.studyMinutes || 0) - (a.studyMinutes || 0));
+
+    content.innerHTML = `
+      <div class="sp-admin-bar">
+        <span class="sp-chip">👥 ${usersData.length} utilisateurs</span>
+        <button class="sp-refresh-btn" id="sp-refresh-btn">🔄 Rafraîchir</button>
+      </div>
+      <div class="sp-user-list">
+        ${usersData.map(u => _renderUserCard(u)).join("")}
+      </div>`;
+
+    document.getElementById("sp-refresh-btn")?.addEventListener("click", _loadAdminUsers);
+
+    // ⑤ Attach medal-send listeners
+    usersData.forEach(u => {
+      const toggleBtn = document.getElementById(`amd-btn-${u.uid}`);
+      const form      = document.getElementById(`amd-form-${u.uid}`);
+      toggleBtn?.addEventListener("click", () => {
+        form.style.display = form.style.display === "none" ? "flex" : "none";
+      });
+      form?.querySelectorAll(".amd-option").forEach(opt => {
+        opt.addEventListener("click", async () => {
+          const medal = ADMIN_MEDALS.find(m => m.id === opt.dataset.mid);
+          if (!medal) return;
+          opt.disabled = true;
+          await _awardMedal(u.uid, {
+            id: `${medal.id}_${Date.now()}`, baseId: medal.id,
+            emoji: medal.emoji, title: medal.title,
+            description: medal.description,
+            type: "admin", awardedAt: Date.now(),
+            awardedBy: state.user?.email || ADMIN_EMAIL,
+          });
+          form.style.display = "none";
+          opt.disabled = false;
+          _showToast(`🏅 Médaille <b>${medal.title}</b> envoyée à ${u.displayName || u.email} !`, "info", 3500);
+        });
+      });
+    });
+
+  } catch (e) {
+    console.error("[studypro] Admin panel error:", e);
+    const c = document.getElementById("sp-admin-content");
+    if (c) c.innerHTML = `<div class="sp-empty">⚠️ Erreur d'accès — vérifiez les règles Firestore.<br><small style="color:#94a3b8">${e.message}</small></div>`;
+  }
+}
+
+function _renderUserCard(u) {
+  const timeStr   = _formatStudyTime(u.studyMinutes || 0);
+  const medals    = u.rewards || [];
+  const rankEmoji = u.studyMinutes > 0 ? (u.studyMinutes >= 120 ? "🥇" : u.studyMinutes >= 30 ? "🥈" : "🥉") : "";
+
+  const medalsHtml = medals.length > 0
+    ? `<div class="sp-user-medals">${medals.map(r =>
+        `<span class="sp-medal-pip" title="${r.title}">${r.emoji}</span>`).join("")}</div>`
+    : `<div class="sp-user-medals sp-user-medals--empty">Aucune médaille</div>`;
+
+  return `
+    <div class="sp-user-card">
+      <div class="sp-user-card-row">
+        <div class="sp-user-info-col">
+          <div class="sp-user-card-name">
+            ${rankEmoji ? `<span class="sp-rank">${rankEmoji}</span>` : ""}
+            ${u.displayName || "—"}
+          </div>
+          <div class="sp-user-card-email">${u.email}</div>
+          ${medalsHtml}
+        </div>
+        <div class="sp-user-chips">
+          <span class="sp-chip" title="Sessions Pomodoro">⏱️ ${u.sessions} séances</span>
+          <span class="sp-chip" title="Temps total d'étude">🕐 ${timeStr}</span>
+        </div>
+      </div>
+      <button class="sp-medal-btn" id="amd-btn-${u.uid}">🏅 Envoyer une médaille</button>
+      <div class="sp-medal-form" id="amd-form-${u.uid}" style="display:none">
+        ${ADMIN_MEDALS.map(m =>
+          `<button class="amd-option" data-mid="${m.id}">${m.emoji} ${m.title}</button>`
+        ).join("")}
+      </div>
+    </div>`;
 }
 
 // ─── Data initialisation (abort-safe) ─────────────────────────────────────
@@ -236,8 +589,10 @@ onAuthStateChanged(auth, async (user) => {
     state.uid   = null;
     state.user  = null;
     state.cache = {};
+    _userRewards = [];
 
     document.getElementById("user-bar")?.remove();
+    _closeAllPanels();
     _hideSkeleton();
     _blockMusic();
 
@@ -259,6 +614,9 @@ onAuthStateChanged(auth, async (user) => {
 
   _unblockMusic();
 
+  // Write/update user profile so admin panel can see this user
+  _writeUserProfile(user); // fire-and-forget
+
   // Immediately update / inject user bar with new account info
   _injectUserBar(user);
 
@@ -268,12 +626,21 @@ onAuthStateChanged(auth, async (user) => {
   // Show skeleton while loading Firestore data
   _showSkeleton();
 
+  // Capture initId for abort-safe listeners
+  const myInitId = _currentInitId + 1; // will be set inside _initUserData
+
   // Load all data for this UID (abort-safe)
   const aborted = await _initUserData(user.uid);
   if (aborted) {
     console.log("[studypro] Init aborted for UID:", user.uid, "(newer auth event took over)");
     return;
   }
+
+  // Start real-time rewards listener (uses current _currentInitId after _initUserData ran)
+  _listenToRewards(user.uid, _currentInitId);
+
+  // Check and award automatic medals based on loaded data
+  await _checkAutoMedals(user.uid);
 
   // All data in cache — load React (or reload it for account switch)
   _loadReactApp();
@@ -438,6 +805,26 @@ function _injectUserBar(user) {
 
       <div class="ud-divider"></div>
 
+      <button class="ud-item" id="ud-trophees-btn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <path d="M6 9H4.5a2.5 2.5 0 010-5H6M18 9h1.5a2.5 2.5 0 000-5H18M6 4h12v10a6 6 0 01-12 0V4zM8 21h8M12 17v4"/>
+        </svg>
+        Mes Trophées
+        <span id="ud-medal-count" class="ud-badge" style="display:none"></span>
+      </button>
+
+      ${user.email === ADMIN_EMAIL ? `
+      <button class="ud-item ud-item--admin" id="ud-admin-btn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/>
+        </svg>
+        Panneau de Contrôle
+      </button>` : ""}
+
+      <div class="ud-divider"></div>
+
       <button class="ud-item ud-item--danger" id="ud-logout-btn">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
              stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -474,6 +861,18 @@ function _injectUserBar(user) {
     e.stopPropagation();
     const isDark = _toggleTheme();
     themeLabel.textContent = isDark ? "Mode Clair" : "Mode Sombre";
+  });
+
+  // Trophées panel
+  document.getElementById("ud-trophees-btn").addEventListener("click", (e) => {
+    e.stopPropagation();
+    _showRewardsPanel();
+  });
+
+  // Admin panel (only rendered for admin email)
+  document.getElementById("ud-admin-btn")?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    _showAdminPanel();
   });
 
   // Logout
