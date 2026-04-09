@@ -13,13 +13,12 @@
   <style>
     /* ─── Animations ────────────────────────────────────────────────── */
     @keyframes overlayFadeIn {
-      from {
-        opacity: 0;
-      }
-
-      to {
-        opacity: 1;
-      }
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes vPulse {
+      0%,100% { opacity:1; transform:scale(1); }
+      50%     { opacity:.3; transform:scale(.65); }
     }
 
     @keyframes userBarSlideIn {
@@ -122,6 +121,117 @@
       font-size: 13px;
       color: #ef4444;
       min-height: 18px;
+      text-align: center;
+    }
+
+    /* ─── Auth email form ────────────────────────────────────────────── */
+    .auth-divider {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 20px 0;
+      color: #94a3b8;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+    }
+    .auth-divider::before,
+    .auth-divider::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: #e2e8f0;
+    }
+
+    .auth-input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 11px 14px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      color: #0f172a;
+      background: #f8fafc;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      margin-bottom: 10px;
+      display: block;
+    }
+    .auth-input:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+      background: #fff;
+    }
+    .auth-input::placeholder { color: #94a3b8; }
+
+    .auth-btn-primary {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: #3b82f6 !important;
+      border: 2px solid #3b82f6 !important;
+      border-radius: 10px;
+      padding: 13px 20px;
+      font-size: 15px;
+      font-weight: 600;
+      color: #fff !important;
+      cursor: pointer;
+      transition: background 0.15s, box-shadow 0.15s;
+      margin-bottom: 8px;
+    }
+    .auth-btn-primary:hover:not(:disabled) {
+      background: #2563eb !important;
+      border-color: #2563eb !important;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+    }
+    .auth-btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .auth-btn-outline {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent !important;
+      border: 2px solid #e2e8f0 !important;
+      border-radius: 10px;
+      padding: 11px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #334155 !important;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .auth-btn-outline:hover:not(:disabled) {
+      background: #f1f5f9 !important;
+      border-color: #3b82f6 !important;
+    }
+    .auth-btn-outline:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .auth-card .auth-forgot {
+      display: block;
+      margin-top: 10px;
+      font-size: 13px;
+      color: #3b82f6;
+      background: none !important;
+      border: none !important;
+      box-shadow: none !important;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      width: 100%;
+      text-align: center;
+      text-decoration: underline;
+      padding: 4px 0;
+    }
+    .auth-card .auth-forgot:hover { color: #2563eb; background: none !important; }
+    .auth-success {
+      margin-top: 10px;
+      font-size: 13px;
+      color: #10b981;
+      min-height: 18px;
+      text-align: center;
     }
 
     /* ─── User Bar ──────────────────────────────────────────────────── */
@@ -133,13 +243,51 @@
       z-index: 9999;
       display: flex;
       align-items: center;
-      justify-content: flex-end;
-      padding: 5px 12px;
+      justify-content: space-between;
+      padding: 6px 20px;
       background: rgba(255, 255, 255, 0.92);
       backdrop-filter: blur(8px);
       border-bottom: 1px solid #e2e8f0;
       font-family: 'Inter', sans-serif;
     }
+
+    /* Brand logo inside the user bar */
+    .sp-brand {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-family: 'Inter', sans-serif;
+      font-weight: 700;
+      font-size: 15px;
+      color: #1e40af;
+      letter-spacing: -0.2px;
+      user-select: none;
+      text-decoration: none;
+    }
+
+    .sp-brand-icon {
+      font-size: 20px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .sp-brand-full { display: inline; }
+    .sp-brand-short { display: none; }
+
+    @media (max-width: 480px) {
+      .sp-brand-full  { display: none; }
+      .sp-brand-short { display: inline; }
+      #user-bar { padding: 6px 12px; }
+    }
+
+    .sp-brand-sub {
+      font-weight: 400;
+      color: #475569;
+      font-size: 13px;
+    }
+
+    html.sp-dark .sp-brand { color: #93c5fd; }
+    html.sp-dark .sp-brand-sub { color: #94a3b8; }
 
     /* Trigger button */
     .ud-trigger {
@@ -414,10 +562,11 @@
       padding: 18px 20px 14px; border-bottom: 1px solid #f1f5f9;
       flex-shrink: 0;  /* header never shrinks */
     }
-    /* Admin content wrapper — must be a scrollable flex column */
+    /* Admin content wrapper — scrollable for all tabs */
     #sp-admin-content {
-      flex: 1; min-height: 0;
-      display: flex; flex-direction: column; overflow: hidden;
+      overflow-y: auto;
+      max-height: calc(80vh - 106px); /* panel height minus header + tabs */
+      overscroll-behavior: contain;
     }
     /* Rewards content wrapper */
     #sp-rewards-content {
@@ -467,8 +616,6 @@
       border-radius: 20px; padding: 3px 10px; font-size: 12px; font-weight: 600;
     }
     .sp-user-list {
-      flex: 1; min-height: 0;        /* take all remaining space and allow shrink */
-      overflow-y: auto;              /* scroll when content overflows */
       padding: 10px 14px 14px;
       display: flex; flex-direction: column; gap: 10px;
     }
@@ -711,6 +858,449 @@
       background: #eff6ff;
       color: #1e40af;
       border: 1.5px solid #93c5fd;
+    }
+
+    /* ── Inbox card (Dashboard / Stats tab) ─────────────────────── */
+    .sp-inbox-empty {
+      text-align: center; color: #64748b; padding: 20px 10px;
+      font-size: 13.5px; line-height: 1.7;
+    }
+    .sp-inbox-list { display: flex; flex-direction: column; gap: 10px; }
+    .sp-inbox-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      background: #ef4444; color: #fff; font-size: 11px; font-weight: 700;
+      border-radius: 20px; padding: 2px 9px; margin-left: 4px;
+    }
+    .sp-inbox-msg {
+      border-radius: 12px; padding: 12px 14px; font-family: 'Inter', sans-serif;
+      transition: box-shadow 0.15s;
+    }
+    .sp-inbox-msg--unread {
+      background: #eff6ff; border: 1.5px solid #bfdbfe;
+    }
+    html.sp-dark .sp-inbox-msg--unread { background: #1e3a5f; border-color: #3b82f6; }
+    .sp-inbox-msg--read {
+      background: #f8fafc; border: 1px solid #e2e8f0;
+    }
+    html.sp-dark .sp-inbox-msg--read { background: #0f172a; border-color: #334155; }
+    .sp-inbox-msg-header {
+      display: flex; align-items: center; gap: 7px;
+      margin-bottom: 6px; flex-wrap: wrap;
+    }
+    .sp-inbox-dot {
+      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+      background: #3b82f6;
+    }
+    .sp-inbox-dot--read { background: #cbd5e1; }
+    .sp-inbox-author {
+      font-size: 12px; font-weight: 700; color: #334155; flex: 1;
+    }
+    html.sp-dark .sp-inbox-author { color: #93c5fd; }
+    .sp-inbox-time { font-size: 11px; color: #94a3b8; }
+    .sp-inbox-msg-text {
+      font-size: 13.5px; color: #1e293b; line-height: 1.5; margin-bottom: 8px;
+    }
+    html.sp-dark .sp-inbox-msg-text { color: #e2e8f0; }
+    .sp-inbox-read-btn {
+      display: inline-block; background: transparent;
+      border: 1px solid #bfdbfe; color: #2563eb;
+      border-radius: 6px; padding: 3px 10px; font-size: 11.5px; font-weight: 600;
+      cursor: pointer; transition: background 0.12s;
+      font-family: 'Inter', sans-serif;
+    }
+    .sp-inbox-read-btn:hover { background: #dbeafe; }
+    .sp-inbox-read-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .sp-inbox-read-status { font-size: 11.5px; color: #94a3b8; }
+
+    .sp-inbox-actions {
+      display: flex; align-items: center; gap: 8px; margin-top: 6px;
+    }
+    .sp-inbox-del-btn {
+      background: transparent; border: 1px solid #fca5a5;
+      border-radius: 6px; padding: 3px 8px; font-size: 13px;
+      cursor: pointer; transition: background 0.12s, border-color 0.12s;
+      line-height: 1; color: #ef4444;
+    }
+    .sp-inbox-del-btn:hover { background: #fee2e2; border-color: #ef4444; }
+    .sp-inbox-del-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    html.sp-dark .sp-inbox-del-btn { border-color: #7f1d1d; color: #fca5a5; }
+    html.sp-dark .sp-inbox-del-btn:hover { background: #450a0a; }
+
+    /* ── Admin msg history ───────────────────────────────────────── */
+    .sp-hist-msg {
+      border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 12px;
+      background: #f8fafc; margin-bottom: 8px;
+    }
+    html.sp-dark .sp-hist-msg { background: #0f172a; border-color: #334155; }
+    .sp-hist-header {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 5px; flex-wrap: wrap;
+    }
+    .sp-hist-to {
+      font-size: 12px; font-weight: 700; color: #334155; flex: 1;
+    }
+    html.sp-dark .sp-hist-to { color: #cbd5e1; }
+    .sp-hist-time { font-size: 11px; color: #94a3b8; }
+    .sp-hist-status { font-size: 11px; font-weight: 600; border-radius: 6px; padding: 1px 7px; }
+    .sp-hist-status--read   { background: #f0fdf4; color: #166534; }
+    .sp-hist-status--unread { background: #fef2f2; color: #991b1b; }
+    .sp-hist-text { font-size: 12.5px; color: #475569; line-height: 1.4; }
+    html.sp-dark .sp-hist-text { color: #94a3b8; }
+
+    /* ── Rewards section labels ───────────────────────────────────── */
+    .sp-rewards-section { padding: 6px 0; }
+    .sp-rewards-section-label {
+      font-size: 12px; font-weight: 700; color: #64748b;
+      text-transform: uppercase; letter-spacing: 0.5px;
+      padding: 4px 18px 6px; display: block;
+    }
+
+    /* ── User bar inbox badge variant ────────────────────────────── */
+    .ud-badge--msg { background: #ef4444; }
+
+    /* ── Evolution tier card ─────────────────────────────────────── */
+    .tier-card {
+      background: var(--sp-card, #f8fafc);
+      border: 1.5px solid var(--sp-border, #e2e8f0);
+      border-radius: 14px;
+      padding: 16px 18px 14px;
+      margin-bottom: 14px;
+    }
+    html.sp-dark .tier-card {
+      background: #1e293b;
+      border-color: #334155;
+    }
+    .tier-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .tier-emoji-big { font-size: 38px; line-height: 1; }
+    .tier-info { flex: 1; }
+    .tier-grade-name {
+      font-weight: 700;
+      font-size: 16px;
+      color: var(--sp-text, #1e293b);
+    }
+    html.sp-dark .tier-grade-name { color: #f1f5f9; }
+    .tier-time-label {
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 2px;
+    }
+    .tier-all {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .tier-pip {
+      font-size: 20px;
+      opacity: 0.25;
+      filter: grayscale(1);
+      cursor: default;
+      transition: opacity 0.2s, filter 0.2s;
+    }
+    .tier-pip--on {
+      opacity: 1;
+      filter: none;
+    }
+    .tier-bar-wrap {
+      height: 8px;
+      background: #e2e8f0;
+      border-radius: 99px;
+      margin-top: 12px;
+      overflow: hidden;
+    }
+    html.sp-dark .tier-bar-wrap { background: #334155; }
+    .tier-bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      transition: width 0.6s ease;
+      min-width: 4px;
+    }
+    .tier-next-info {
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 6px;
+    }
+
+    /* ── Blocking medal modal ────────────────────────────────────── */
+    .sp-medal-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(4px);
+      z-index: 99999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .sp-medal-modal--show { opacity: 1; }
+    .sp-medal-modal-card {
+      background: #fff;
+      border-radius: 22px;
+      padding: 36px 32px 28px;
+      max-width: 380px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.2);
+      transform: scale(0.9);
+      transition: transform 0.3s cubic-bezier(.34,1.56,.64,1);
+    }
+    .sp-medal-modal--show .sp-medal-modal-card { transform: scale(1); }
+    html.sp-dark .sp-medal-modal-card {
+      background: #1e293b;
+      color: #f1f5f9;
+    }
+    .sp-medal-modal-confetti { font-size: 28px; margin-bottom: 4px; }
+    .sp-medal-modal-emoji { font-size: 72px; margin: 6px 0; }
+    .sp-medal-modal-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+    .sp-medal-modal-name {
+      font-size: 22px;
+      font-weight: 800;
+      color: #1e293b;
+      margin-bottom: 6px;
+    }
+    html.sp-dark .sp-medal-modal-name { color: #f1f5f9; }
+    .sp-medal-modal-desc {
+      font-size: 14px;
+      color: #64748b;
+      margin-bottom: 8px;
+    }
+    .sp-medal-modal-from {
+      font-size: 12px;
+      color: #94a3b8;
+      margin-bottom: 16px;
+    }
+    .sp-medal-modal-btn {
+      margin-top: 12px;
+      padding: 12px 40px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .sp-medal-modal-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(99,102,241,0.35);
+    }
+
+    /* ── Admin notification banners ─────────────────────────────── */
+    .sp-msg-banner {
+      position: fixed;
+      top: 52px;
+      left: 0; right: 0;
+      z-index: 9000;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 18px;
+      font-size: 13.5px;
+      font-weight: 500;
+      transform: translateY(-100%);
+      transition: transform 0.35s ease;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.12);
+    }
+    .sp-msg-banner--show { transform: translateY(0); }
+    .sp-msg-banner--global {
+      background: #f0fdf4;
+      color: #166534;
+      border-bottom: 2px solid #86efac;
+    }
+    html.sp-dark .sp-msg-banner--global {
+      background: #14532d;
+      color: #bbf7d0;
+      border-color: #16a34a;
+    }
+    .sp-msg-banner--private {
+      background: #eff6ff;
+      color: #1e40af;
+      border-bottom: 2px solid #93c5fd;
+    }
+    html.sp-dark .sp-msg-banner--private {
+      background: #1e3a5f;
+      color: #bfdbfe;
+      border-color: #3b82f6;
+    }
+    .sp-msg-icon { font-size: 18px; }
+    .sp-msg-text { flex: 1; }
+    .sp-msg-close {
+      background: transparent;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      color: inherit;
+      opacity: 0.6;
+      line-height: 1;
+      padding: 0 4px;
+    }
+    .sp-msg-close:hover { opacity: 1; }
+
+    /* ── Admin panel tabs ────────────────────────────────────────── */
+    .sp-admin-tabs {
+      display: flex;
+      gap: 6px;
+      padding: 8px 16px 0;
+      border-bottom: 2px solid var(--sp-border, #e2e8f0);
+      background: var(--sp-card, #f8fafc);
+      flex-shrink: 0;
+    }
+    html.sp-dark .sp-admin-tabs {
+      background: #1e293b;
+      border-color: #334155;
+    }
+    .sp-tab {
+      padding: 8px 16px;
+      border: none;
+      background: transparent;
+      border-radius: 8px 8px 0 0;
+      font-size: 13px;
+      font-weight: 600;
+      color: #64748b;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      margin-bottom: -2px;
+      border-bottom: 2px solid transparent;
+    }
+    .sp-tab:hover { background: #f1f5f9; color: #1e293b; }
+    html.sp-dark .sp-tab:hover { background: #334155; color: #f1f5f9; }
+    .sp-tab--active {
+      color: #6366f1;
+      border-bottom: 2px solid #6366f1;
+      background: var(--sp-bg, #fff);
+    }
+    html.sp-dark .sp-tab--active {
+      color: #818cf8;
+      border-color: #818cf8;
+      background: #0f172a;
+    }
+
+    /* ── Team management ─────────────────────────────────────────── */
+    .sp-team-section {
+      padding: 16px;
+      border-bottom: 1px solid var(--sp-border, #e2e8f0);
+    }
+    html.sp-dark .sp-team-section { border-color: #334155; }
+    .sp-team-section:last-child { border-bottom: none; }
+    .sp-section-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin: 0 0 10px;
+    }
+    .sp-team-input-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .sp-team-input {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 13px;
+      background: #fff;
+      color: #1e293b;
+      outline: none;
+    }
+    html.sp-dark .sp-team-input {
+      background: #0f172a;
+      border-color: #334155;
+      color: #f1f5f9;
+    }
+    .sp-team-input:focus { border-color: #6366f1; }
+    .sp-team-btn {
+      padding: 8px 14px;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: opacity 0.15s;
+    }
+    .sp-team-btn:hover { opacity: 0.85; }
+    .sp-team-btn--promote { background: #6366f1; color: #fff; }
+    .sp-team-btn--remove  { background: #ef4444; color: #fff; }
+    .sp-team-msg {
+      font-size: 12.5px;
+      margin-top: 8px;
+      min-height: 16px;
+      color: #64748b;
+    }
+    .sp-team-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 0;
+      border-bottom: 1px solid #f1f5f9;
+      flex-wrap: wrap;
+    }
+    html.sp-dark .sp-team-row { border-color: #1e293b; }
+    .sp-team-name { font-weight: 600; font-size: 13px; color: var(--sp-text, #1e293b); }
+    html.sp-dark .sp-team-name { color: #f1f5f9; }
+    .sp-team-email { font-size: 12px; color: #64748b; flex: 1; }
+    .sp-team-action {
+      padding: 5px 10px;
+      border: none;
+      border-radius: 7px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .sp-team-action:hover:not(:disabled) { opacity: 0.8; }
+    .sp-team-action:disabled { opacity: 0.4; cursor: default; }
+    .sp-team-action--remove  { background: #fee2e2; color: #b91c1c; }
+    .sp-team-action--block   { background: #fef3c7; color: #92400e; }
+    .sp-team-action--unblock { background: #dcfce7; color: #15803d; }
+    .sp-empty-small {
+      font-size: 13px;
+      color: #94a3b8;
+      padding: 6px 0;
+    }
+
+    /* ── Admin messaging ─────────────────────────────────────────── */
+    .sp-msg-textarea {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 10px 12px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 13px;
+      font-family: inherit;
+      resize: vertical;
+      background: #fff;
+      color: #1e293b;
+      outline: none;
+      margin-top: 8px;
+    }
+    html.sp-dark .sp-msg-textarea {
+      background: #0f172a;
+      border-color: #334155;
+      color: #f1f5f9;
+    }
+    .sp-msg-textarea:focus { border-color: #6366f1; }
+    .sp-msg-btns-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+      flex-wrap: wrap;
     }
   </style>
 </head>
